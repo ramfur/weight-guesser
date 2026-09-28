@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Guesser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-height: 800px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            background: #eef0ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area p {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .upload-area small {
+            display: block;
+            color: #999;
+            font-size: 12px;
+        }
+
+        #photoInput {
+            display: none;
+        }
+
+        .photo-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .photo-item {
+            position: relative;
+            aspect-ratio: 1;
+            background: #f0f0f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-remove {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-container {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .result-container.active {
+            display: flex;
+        }
+
+        .weight-estimate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .weight-estimate .label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .weight-estimate .value {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .weight-estimate .unit {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .analysis-text {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 12px;
+            line-height: 1.6;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .confidence-bar {
+            background: #f0f0f0;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+        }
+
+        .confirmation-section {
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 12px;
+            padding: 15px;
+            gap: 10px;
+        }
+
+        .confirmation-section.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .confirmation-text {
+            font-size: 14px;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .confirmation-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-yes, .btn-no {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-yes {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-yes:hover {
+            background: #218838;
+        }
+
+        .btn-no {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-no:hover {
+            background: #c82333;
+        }
+
+        .final-message {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            color: #155724;
+            font-size: 14px;
+            display: none;
+        }
+
+        .final-message.success {
+            display: block;
+        }
+
+        .photo-count {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .initial-state {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .initial-state.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚖️ Weight Guesser</h1>
+            <p>Upload up to 5 photos for an estimate</p>
+        </div>
+
+        <div class="content">
+            <div class="initial-state">
+                <div class="section">
+                    <div class="section-title">📸 Upload Photos</div>
+                    <div class="upload-area" id="uploadArea">
+                        <p>📱 Tap to upload photos</p>
+                        <small>JPG, PNG • Up to 5 photos</small>
+                    </div>
+                    <input type="file" id="photoInput" accept="image/*" multiple>
+                    <div class="photo-preview" id="photoPreview"></div>
+                    <div class="photo-count" id="photoCount"></div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzing photos...</p>
+            </div>
+
+            <div class="result-container" id="resultContainer">
+                <div class="weight-estimate">
+                    <div class="label">Estimated Weight</div>
+                    <div class="value" id="weightValue">--</div>
+                    <div class="unit">kilograms</div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="analysis-text" id="analysisText"></div>
+
+                <div class="confirmation-section" id="confirmationSection">
+                    <div class="confirmation-text">
+                        ✋ Are you sure this is close to your actual weight?
+                    </div>
+                    <div class="confirmation-buttons">
+                        <button class="btn-yes" id="btnYes">Yes, Accurate ✓</button>
+                        <button class="btn-no" id="btnNo">No, Try Again</button>
+                    </div>
+                </div>
+
+                <div class="final-message" id="finalMessage"></div>
+            </div>
+        </div>
+
+        <div class="button-group" id="buttonGroup">
+            <button class="btn-primary" id="guessBtn" disabled>Guess My Weight</button>
+            <button class="btn-secondary" id="resetBtn" style="display: none;">Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        let uploadedPhotos = [];
+
+        const uploadArea = document.getElementById('uploadArea');
+        const photoInput = document.getElementById('photoInput');
+        const photoPreview = document.getElementById('photoPreview');
+        const photoCount = document.getElementById('photoCount');
+        const guessBtn = document.getElementById('guessBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loading = document.getElementById('loading');
+        const resultContainer = document.getElementById('resultContainer');
+        const confirmationSection = document.getElementById('confirmationSection');
+        const finalMessage = document.getElementById('finalMessage');
+        const initialState = document.querySelector('.initial-state');
+        const buttonGroup = document.getElementById('buttonGroup');
+
+        uploadArea.addEventListener('click', () => photoInput.click());
+
+        photoInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            const availableSlots = 5 - uploadedPhotos.length;
+            const filesToAdd = files.slice(0, availableSlots);
+
+            filesToAdd.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    uploadedPhotos.push(event.target.result);
+                    renderPhotos();
+                    updateGuessButton();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            photoInput.value = '';
+        });
+
+        function renderPhotos() {
+            photoPreview.innerHTML = '';
+            uploadedPhotos.forEach((photo, index) => {
+                const div = document.createElement('div');
+                div.className = 'photo-item';
+                div.innerHTML = `
+                    <img src="${photo}" alt="Photo ${index + 1}">
+                    <button class="photo-remove" onclick="removePhoto(${index})">×</button>
+                `;
+                photoPreview.appendChild(div);
+            });
+            photoCount.textContent = `${uploadedPhotos.length}/5 photos uploaded`;
+        }
+
+        function removePhoto(index) {
+            uploadedPhotos.splice(index, 1);
+            renderPhotos();
+            updateGuessButton();
+        }
+
+        function updateGuessButton() {
+            guessBtn.disabled = uploadedPhotos.length === 0;
+        }
+
+        guessBtn.addEventListener('click', makeGuess);
+        resetBtn.addEventListener('click', resetApp);
+
+        async function makeGuess() {
+            initialState.classList.add('hidden');
+            loading.style.display = 'flex';
+            guessBtn.style.display = 'none';
+
+            // Simulate API processing
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            const guess = analyzePhotos();
+            displayResult(guess);
+        }
+
+        function analyzePhotos() {
+            // Simulate weight analysis based on number and "content" of photos
+            const baseWeight = 65 + Math.random() * 30; // 65-95 kg range
+            const variance = Math.random() * 8 - 4; // ±4 kg variance
+            const estimatedWeight = Math.round((baseWeight + variance) * 2) / 2;
+            const confidence = 65 + Math.random() * 25; // 65-90% confidence
+
+            // Generate realistic analysis text
+            const buildTypes = [
+                "athletic and lean",
+                "moderately built",
+                "solid and muscular",
+                "average build",
+                "fit frame"
+            ];
+
+            const compositions = [
+                "good muscle tone with moderate body fat",
+                "lean physique with decent muscle mass",
+                "balanced build with average composition",
+                "athletic frame with low body fat",
+                "well-proportioned frame"
+            ];
+
+            const buildType = buildTypes[Math.floor(Math.random() * buildTypes.length)];
+            const composition = compositions[Math.floor(Math.random() * compositions.length)];
+
+            const analysis = `Based on your ${buildType} and ${composition}, the estimate looks solid. Your proportions suggest this range is realistic for your overall physique.`;
+
+            return {
+                weight: estimatedWeight,
+                confidence: Math.round(confidence),
+                analysis: analysis
+            };
+        }
+
+        function displayResult(guess) {
+            loading.style.display = 'none';
+            resultContainer.classList.add('active');
+
+            document.getElementById('weightValue').textContent = guess.weight.toFixed(1);
+            document.getElementById('confidenceFill').style.width = guess.confidence + '%';
+            document.getElementById('analysisText').textContent = guess.analysis;
+            confirmationSection.classList.add('active');
+
+            document.getElementById('btnYes').onclick = () => handleConfirmation(true);
+            document.getElementById('btnNo').onclick = () => handleConfirmation(false);
+        }
+
+        function handleConfirmation(isCorrect) {
+            confirmationSection.classList.remove('active');
+            finalMessage.classList.add('success');
+
+            if (isCorrect) {
+                finalMessage.innerHTML = '✅ Great! The estimate was accurate.<br><small>Thanks for confirming!</small>';
+            } else {
+                finalMessage.innerHTML = '😅 Got it! The estimate was off.<br><small>Thanks for the feedback!</small>';
+            }
+
+            resetBtn.style.display = 'block';
+            guessBtn.style.display = 'none';
+            buttonGroup.style.gap = '12px';
+        }
+
+        function resetApp() {
+            uploadedPhotos = [];
+            photoPreview.innerHTML = '';
+            photoCount.textContent = '';
+            resultContainer.classList.remove('active');
+            finalMessage.classList.remove('success');
+            finalMessage.innerHTML = '';
+            initialState.classList.remove('hidden');
+            guessBtn.style.display = 'flex';
+            resetBtn.style.display = 'none';
+            updateGuessButton();
+        }
+
+        updateGuessButton();
+    </script>
+</body>
+</html>
